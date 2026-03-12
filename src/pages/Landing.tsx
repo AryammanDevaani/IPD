@@ -181,7 +181,7 @@ const Landing = () => {
           <div className="max-w-7xl mx-auto px-6 relative z-10 text-center">
              <div className="grid md:grid-cols-3 gap-12 text-center">
                 {[
-                  { value: "99.7%", label: "Accuracy Rate" },
+                  
                   { value: "< 2s", label: "Processing Time" },
                   { value: "50+", label: "Document Types" }
                 ].map((s, i) => (
