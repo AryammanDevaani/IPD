@@ -175,24 +175,24 @@ const Landing = () => {
           </div>
         </section>
 
-        {/* Stats Section */}
         <section id="stats" className="py-32 border-t border-white/5 relative overflow-hidden">
-          <div className="absolute inset-0 bg-cyan-950/20" />
-          <div className="max-w-7xl mx-auto px-6 relative z-10 text-center">
-             <div className="grid md:grid-cols-3 gap-12 text-center">
-                {[
-                  
-                  { value: "< 2s", label: "Processing Time" },
-                  { value: "50+", label: "Document Types" }
-                ].map((s, i) => (
-                  <div key={i}>
-                    <div className="text-5xl font-extrabold text-white mb-2">{s.value}</div>
-                    <div className="text-cyan-400 font-medium tracking-wide uppercase">{s.label}</div>
-                  </div>
-                ))}
-             </div>
-          </div>
-        </section>
+  <div className="absolute inset-0 bg-cyan-950/20" />
+  <div className="max-w-7xl mx-auto px-6 relative z-10 text-center">
+    
+    <div className="grid grid-cols-2 gap-12 text-center max-w-2xl mx-auto">
+      {[
+        { value: "< 2s", label: "Processing Time" },
+        { value: "50+", label: "Document Types" }
+      ].map((s, i) => (
+        <div key={i}>
+          <div className="text-5xl font-extrabold text-white mb-2">{s.value}</div>
+          <div className="text-cyan-400 font-medium tracking-wide uppercase">{s.label}</div>
+        </div>
+      ))}
+    </div>
+ 
+  </div>
+</section>
 
         {/* Footer */}
         <footer className="py-12 border-t border-slate-900 text-center text-slate-500">
