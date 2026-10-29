@@ -1,0 +1,36 @@
+# Starting points from CLAUDE.md section 3 - to be validated, not guarantees.
+run_name: deberta_multitask_s1
+model_name: microsoft/deberta-v3-base
+mode: multitask              # multitask (4-way + binary) | binary (binary head only)
+seed: 1
+max_length: 384
+learning_rate: 2.0e-5
+epochs: 3
+per_device_batch_size: 4      # measured: 3.48 GB peak on the 4 GB RTX 3050 (bs 8 spills to system RAM)
+grad_accum_steps: 4           # effective batch 16
+weight_decay: 0.01
+warmup_ratio: 0.06
+max_grad_norm: 1.0
+binary_loss_weight: 0.5
+class_weight_power: 0.5      # inverse-sqrt frequency weighting for the 4-way loss
+precision: auto              # auto: bf16 on CUDA if supported, else fp16 on CUDA, fp32 on CPU
+gradient_checkpointing: true # needed to fit deberta-v3-base @384 on a 4 GB GPU
+# Hardware deviation: freezing the 128k x 768 word-embedding matrix (98M of 184M params) saves its
+# gradients + AdamW state. Run an unfrozen comparison on larger hardware before final claims.
+freeze_word_embeddings: true
+early_stopping_patience: 1   # evaluations without improvement
+eval_every_steps: null       # null = once per epoch
+selection_metric: auto       # auto: 4-way macro F1 (multitask) / binary AUROC (binary)
+eval_batch_size: 32
+# Resumable training: a checkpoint (~2 GB) is saved every N optimizer steps and at each epoch end;
+# re-running the same command with the same run_name continues from it. Deleted after a finished run.
+checkpoint_every_steps: 1000
+resume: true
+keep_last_checkpoint: false
+dataloader_workers: 2         # ignored on Windows
+max_train_rows: null         # null = all; an integer selects a documented stratified subset
+max_val_rows: null
+ablation:
+  exclude_raid_paraphrase: false
+  exclude_txd22_mixed: false
+  exclude_sources: []

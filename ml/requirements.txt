@@ -1,0 +1,16 @@
+# Training/eval environment (tested 2026-10-25). Install torch from the CUDA index first:
+#   pip install torch==2.10.0 --index-url https://download.pytorch.org/whl/cu128
+huggingface_hub==1.33.0
+matplotlib==3.11.2
+numpy==2.3.1
+pandas==2.3.1
+protobuf==7.36.2
+pyarrow==21.0.0
+pytest==9.1.1
+PyYAML==6.0.3
+scikit-learn==1.7.1
+scipy==1.18.1
+sentencepiece==0.2.2
+tiktoken==0.14.0
+tokenizers==0.22.2
+transformers==5.7.0

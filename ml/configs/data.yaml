@@ -1,0 +1,51 @@
+# ScriptSense AI-detector data budget. Quotas are targets; actual counts are written to
+# data/manifests/ and may be lower if a stratum has too few eligible rows. Never pad.
+seed: 20261025
+
+raid:
+  # Lineage = RAID source_id (the human source document and every generation/attack derived
+  # from it). A hash of the lineage decides train-pool vs challenge-pool; no lineage is in both.
+  challenge_lineage_fraction: 0.10
+  # Validation pool (early stopping, temperature scaling, threshold selection) - lineage-disjoint
+  # from both train and challenge so RAID domains are represented in validation.
+  validation_lineage_fraction: 0.05
+  # Unseen-generator evaluation: these model families never appear in training rows.
+  holdout_generators: [cohere, cohere-chat]
+  train_quota:
+    ai_clean: 50000        # attack == none                       -> AI_GENERATED
+    ai_paraphrase: 25000   # attack == paraphrase (DIPPER)        -> AI_PARAPHRASED_OR_REFINED
+    ai_other: 25000        # all other attacks, stratified        -> AI_GENERATED or binary-only (synonym)
+    # Not in the CLAUDE.md 100k budget; added so RAID domains (recipes, poetry, ...) are not
+    # AI-only in training, which would let the model learn "domain => AI". Counted separately.
+    # Set to 0 to reproduce the original budget exactly (ablation).
+    human_clean: 25000
+  validation_quota:
+    ai_clean: 1500
+    ai_paraphrase: 1000
+    ai_other: 1000
+    human_clean: 1500
+  challenge_quota:          # 20,000 rows total; not used for weight updates or thresholds
+    ai_clean: 7000
+    ai_paraphrase: 4000
+    ai_other: 4000
+    human_clean: 5000
+
+txd22:
+  # prompt-grouped split of free components
+  ratios: {train: 0.8, validation: 0.1, test: 0.1}
+
+quality:
+  # Degenerate repetition loops (e.g. GPT-2 greedy "it is a film that is not for everyone, because
+  # it is a film ...") are dropped: they are trivially detectable, inflate metrics, and chain
+  # unrelated documents into giant near-duplicate components. Ratio = unique word trigrams /
+  # trigrams, computed on texts with >= 20 trigrams. Measured on 2026-10-25: < 0.3 affects ~4.1%
+  # of sampled RAID rows (almost all AI), 0.15% of SemEval, 0% of TXD-22.
+  min_unique_trigram_ratio: 0.3
+
+dedup:
+  num_perm: 128
+  bands: 16              # 16 bands x 8 rows: LSH candidate threshold ~0.71
+  near_dup_threshold: 0.8
+  # Near-duplicates are always merged into one split group. Extra copies are dropped only
+  # when they also agree on class_4way and label_binary (true duplicates); differing-label
+  # near-duplicates (e.g. a clean generation and its homoglyph attack) are kept together.
