@@ -75,22 +75,42 @@ def download(name: str) -> dict:
         print(f"[{name}] present, verifying {spec['algo']}...", flush=True)
     else:
         part = dest.with_suffix(dest.suffix + ".part")
-        start = part.stat().st_size if part.exists() else 0
-        req = urllib.request.Request(spec["url"], headers={"User-Agent": "scriptsense-data/1.0"})
-        if start:
-            req.add_header("Range", f"bytes={start}-")
-        print(f"[{name}] downloading {spec['size'] / 1e6:.1f} MB (resume at {start})", flush=True)
-        with urllib.request.urlopen(req, timeout=60) as resp:
-            if start and resp.status != 206:
-                start = 0  # server ignored Range; restart
-            with open(part, "ab" if start else "wb") as out:
-                done, last = start, time.time()
-                while block := resp.read(4 * 1024 * 1024):
-                    out.write(block)
-                    done += len(block)
-                    if time.time() - last > 30:
-                        print(f"[{name}] {done / spec['size']:.1%}", flush=True)
-                        last = time.time()
+        max_retries = 30
+        retry = 0
+        while True:
+            start = part.stat().st_size if part.exists() else 0
+            if start >= spec["size"]:
+                break
+            req = urllib.request.Request(spec["url"], headers={"User-Agent": "scriptsense-data/1.0"})
+            if start:
+                req.add_header("Range", f"bytes={start}-")
+            print(f"[{name}] downloading {spec['size'] / 1e6:.1f} MB (resume at {start / 1e6:.1f} MB)", flush=True)
+            try:
+                with urllib.request.urlopen(req, timeout=60) as resp:
+                    if start and resp.status not in (200, 206):
+                        start = 0  # server ignored Range; restart
+                    with open(part, "ab" if start else "wb") as out:
+                        done, last = start, time.time()
+                        while block := resp.read(4 * 1024 * 1024):
+                            out.write(block)
+                            done += len(block)
+                            if time.time() - last > 15:
+                                print(f"[{name}] {done / spec['size']:.1%}", flush=True)
+                                last = time.time()
+            except Exception as e:
+                retry += 1
+                print(f"[{name}] connection interrupted: {e}; retrying ({retry}/{max_retries}) in 5s...", flush=True)
+                if retry > max_retries:
+                    raise
+                time.sleep(5)
+                continue
+
+            if part.stat().st_size >= spec["size"]:
+                break
+            else:
+                print(f"[{name}] stream ended early ({part.stat().st_size}/{spec['size']}); resuming...", flush=True)
+                time.sleep(2)
+
         part.replace(dest)
 
     digest = _hash_file(dest, spec["algo"])
